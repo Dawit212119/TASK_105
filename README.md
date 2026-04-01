@@ -71,7 +71,7 @@ Stop:
 docker compose down
 ```
 
-Runtime data (SQLite DB, keys, logs, attachments) is stored under `repo/data/` via Compose volume mounts.
+Runtime data (SQLite DB, keys, logs, attachments) lives under `repo/data/` as a **single** Compose bind mount (`./data:/app/data`). Do not bind-mount only `db.sqlite3` by file path on an empty host tree, or Docker may create a **directory** named `db.sqlite3` and SQLite will fail with `unable to open database file`.
 
 ## Optional: override Compose defaults
 

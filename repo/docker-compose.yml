@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   app:
     build: .
@@ -15,8 +13,8 @@ services:
       - ATTACHMENT_DIR=/app/data/attachments
       - JOBS_ENABLED=true
     volumes:
-      - ./data/db.sqlite3:/app/data/db.sqlite3
-      - ./data/keys:/app/data/keys
-      - ./data/attachments:/app/data/attachments
-      - ./data/logs:/app/data/logs
+      # Mount the whole data directory (not individual files). If the host path
+      # ./data/db.sqlite3 does not exist, Docker would create a *directory*
+      # named db.sqlite3 and SQLite fails with "unable to open database file".
+      - ./data:/app/data
     restart: unless-stopped

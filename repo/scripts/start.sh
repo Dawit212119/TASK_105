@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Generate Fernet key if none exists
+# Ensure writable layout inside the mounted ./data volume (keys, logs, attachments, DB dir)
 KEY_PATH="${FERNET_KEY_PATH:-data/keys/secret.key}"
+LOG_PATH="${LOG_FILE:-data/logs/app.jsonl}"
+ATTACH_DIR="${ATTACHMENT_DIR:-data/attachments}"
+mkdir -p "$(dirname "$KEY_PATH")" "$(dirname "$LOG_PATH")" "$ATTACH_DIR"
+
+# Generate Fernet key if none exists
 if [ ! -f "$KEY_PATH" ]; then
   echo "Generating new Fernet key at $KEY_PATH"
   python - <<'EOF'

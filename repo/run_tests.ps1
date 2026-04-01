@@ -14,26 +14,26 @@ function Write-Fail  { param($msg) Write-Host "[FAIL]  $msg" -ForegroundColor Re
 
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host "  Acceptance Test Suite — Neighborhood Commerce System"  -ForegroundColor Cyan
+Write-Host "  Acceptance Test Suite - Neighborhood Commerce System"  -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ── Prerequisites ────────────────────────────────────────────
-Write-Info "Checking Python …"
-try { python --version | Out-Null } catch { Write-Fail "python not found — install Python 3.12+"; exit 1 }
+# --- Prerequisites ---
+Write-Info "Checking Python..."
+try { python --version | Out-Null } catch { Write-Fail "python not found - install Python 3.12+"; exit 1 }
 
-Write-Info "Checking pytest …"
-try { python -m pytest --version | Out-Null } catch { Write-Fail "pytest not found — run: pip install pytest"; exit 1 }
+Write-Info "Checking pytest..."
+try { python -m pytest --version | Out-Null } catch { Write-Fail "pytest not found - run: pip install pytest"; exit 1 }
 
-# ── Data directories and Fernet key ─────────────────────────
-Write-Info "Ensuring data directories exist …"
+# --- Data directories and Fernet key ---
+Write-Info "Ensuring data directories exist..."
 New-Item -ItemType Directory -Force -Path (Join-Path $REPO "data\keys")        | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $REPO "data\logs")        | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $REPO "data\attachments") | Out-Null
 
 $keyFile = Join-Path $REPO "data\keys\secret.key"
 if (-not (Test-Path $keyFile)) {
-    Write-Info "Generating Fernet encryption key …"
+    Write-Info "Generating Fernet encryption key..."
     python -c @"
 from cryptography.fernet import Fernet
 with open(r'$keyFile', 'wb') as f:
@@ -42,7 +42,7 @@ with open(r'$keyFile', 'wb') as f:
     Write-Ok "Key written to $keyFile"
 }
 
-# ── Environment ──────────────────────────────────────────────
+# --- Environment ---
 $env:PYTHONPATH      = $REPO
 $env:FERNET_KEY_PATH = $keyFile
 $env:LOG_FILE        = Join-Path $REPO "data\logs\app.jsonl"
@@ -50,10 +50,10 @@ $env:ATTACHMENT_DIR  = Join-Path $REPO "data\attachments"
 
 Set-Location $ROOT
 
-# ── Run unit tests ───────────────────────────────────────────
+# --- Run unit tests ---
 Write-Host ""
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
-Write-Host "  PHASE 1 — Unit Tests  (unit_tests/)"                   -ForegroundColor Cyan
+Write-Host "  PHASE 1 - Unit Tests  (unit_tests/)"                   -ForegroundColor Cyan
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
 
 $unitResult = 0
@@ -64,10 +64,10 @@ try {
 }
 if ($LASTEXITCODE -ne 0) { $unitResult = $LASTEXITCODE }
 
-# ── Run API functional tests ─────────────────────────────────
+# --- Run API functional tests ---
 Write-Host ""
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
-Write-Host "  PHASE 2 — API Functional Tests  (API_tests/)"          -ForegroundColor Cyan
+Write-Host "  PHASE 2 - API Functional Tests  (API_tests/)"          -ForegroundColor Cyan
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
 
 $apiResult = 0
@@ -78,12 +78,15 @@ try {
 }
 if ($LASTEXITCODE -ne 0) { $apiResult = $LASTEXITCODE }
 
-# ── Aggregate summary ────────────────────────────────────────
+# --- Aggregate summary ---
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  SUMMARY"                                                 -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
-python -m pytest unit_tests/ API_tests/ --tb=no -q 2>&1 | Select-Object -Last 5
+$oldEap = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+python -m pytest unit_tests/ API_tests/ --tb=no -q 2>&1 | Select-Object -Last 5 | Write-Host
+$ErrorActionPreference = $oldEap
 
 Write-Host ""
 if ($unitResult -eq 0 -and $apiResult -eq 0) {
