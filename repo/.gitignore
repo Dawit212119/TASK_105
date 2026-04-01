@@ -1,0 +1,25 @@
+.env
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Sensitive data — never commit
+data/keys/
+data/db.sqlite3
+data/db.sqlite3-wal
+data/db.sqlite3-shm
+data/logs/
+data/attachments/
+
+# IDE
+.vscode/
+.idea/
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage

@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# ============================================================
+# run_tests.sh — One-click test runner for the acceptance suite
+# Run from the project root:  bash run_tests.sh
+# ============================================================
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+REPO="$ROOT"
+
+# ── Colour helpers ──────────────────────────────────────────
+GREEN='\033[0;32m'; RED='\033[0;31m'; CYAN='\033[0;36m'; NC='\033[0m'
+info()  { echo -e "${CYAN}[INFO]${NC}  $*"; }
+ok()    { echo -e "${GREEN}[PASS]${NC}  $*"; }
+fail()  { echo -e "${RED}[FAIL]${NC}  $*"; }
+
+echo ""
+echo "========================================================"
+echo "  Acceptance Test Suite — Neighborhood Commerce System"
+echo "========================================================"
+echo ""
+
+# ── Prerequisites ────────────────────────────────────────────
+info "Checking Python …"
+python --version 2>&1 || { fail "python not found — install Python 3.12+"; exit 1; }
+
+info "Checking pytest …"
+python -m pytest --version 2>&1 || { fail "pytest not found — run: pip install pytest"; exit 1; }
+
+# ── Data directories and Fernet key ─────────────────────────
+info "Ensuring data directories exist …"
+mkdir -p "$REPO/data/keys" "$REPO/data/logs" "$REPO/data/attachments"
+
+if [ ! -f "$REPO/data/keys/secret.key" ]; then
+    info "Generating Fernet encryption key …"
+    python -c "
+from cryptography.fernet import Fernet
+with open('$REPO/data/keys/secret.key', 'wb') as f:
+    f.write(Fernet.generate_key())
+"
+    ok "Key written to $REPO/data/keys/secret.key"
+fi
+
+# ── Environment ──────────────────────────────────────────────
+export PYTHONPATH="$REPO"
+export FERNET_KEY_PATH="$REPO/data/keys/secret.key"
+export LOG_FILE="$REPO/data/logs/app.jsonl"
+export ATTACHMENT_DIR="$REPO/data/attachments"
+
+cd "$ROOT"
+
+# ── Run unit tests ───────────────────────────────────────────
+echo ""
+echo "--------------------------------------------------------"
+echo "  PHASE 1 — Unit Tests  (unit_tests/)"
+echo "--------------------------------------------------------"
+UNIT_RESULT=0
+python -m pytest unit_tests/ \
+    -v \
+    --tb=short \
+    --no-header \
+    -q \
+    2>&1 || UNIT_RESULT=$?
+
+# ── Run API functional tests ─────────────────────────────────
+echo ""
+echo "--------------------------------------------------------"
+echo "  PHASE 2 — API Functional Tests  (API_tests/)"
+echo "--------------------------------------------------------"
+API_RESULT=0
+python -m pytest API_tests/ \
+    -v \
+    --tb=short \
+    --no-header \
+    -q \
+    2>&1 || API_RESULT=$?
+
+# ── Aggregate summary ────────────────────────────────────────
+echo ""
+echo "========================================================"
+echo "  SUMMARY"
+echo "========================================================"
+python -m pytest unit_tests/ API_tests/ \
+    --tb=no \
+    -q \
+    2>&1 | tail -5
+
+echo ""
+if [ "$UNIT_RESULT" -eq 0 ] && [ "$API_RESULT" -eq 0 ]; then
+    ok "All tests passed."
+    exit 0
+else
+    fail "One or more tests failed."
+    [ "$UNIT_RESULT"  -ne 0 ] && fail "  Unit tests:         FAILED (exit $UNIT_RESULT)"
+    [ "$API_RESULT"   -ne 0 ] && fail "  API tests:          FAILED (exit $API_RESULT)"
+    exit 1
+fi

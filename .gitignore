@@ -1,0 +1,13 @@
+# Excluded from version control (per project policy)
+a20597d5-e355-411e-b217-0ffb357f9bb1.jsonl
+convert_ai_session.py
+
+# Python / tooling
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db

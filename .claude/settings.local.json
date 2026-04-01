@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/ -v --tb=line)",
+      "Bash(PYTHONPATH=repo FERNET_KEY_PATH=repo/data/keys/secret.key LOG_FILE=repo/data/logs/app.jsonl ATTACHMENT_DIR=repo/data/attachments python -m pytest API_tests/ -x -q)"
+    ]
+  }
+}

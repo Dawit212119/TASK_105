@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - APP_VERSION=${APP_VERSION:-0.1.0}
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=sqlite:////app/data/db.sqlite3
+      - FERNET_KEY_PATH=/app/data/keys/secret.key
+      - LOG_FILE=/app/data/logs/app.jsonl
+      - ATTACHMENT_DIR=/app/data/attachments
+      - JOBS_ENABLED=true
+    volumes:
+      - ./data/db.sqlite3:/app/data/db.sqlite3
+      - ./data/keys:/app/data/keys
+      - ./data/attachments:/app/data/attachments
+      - ./data/logs:/app/data/logs
+    restart: unless-stopped

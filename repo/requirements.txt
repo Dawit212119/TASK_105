@@ -1,0 +1,33 @@
+# Core
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.7
+Flask-SocketIO==5.3.6
+
+# Auth & Crypto
+bcrypt==4.1.3
+cryptography==42.0.8
+
+# Validation
+marshmallow==3.21.3
+
+# Scheduling
+APScheduler==3.10.4
+
+# WebSocket transport
+python-socketio==5.11.3
+python-engineio==4.9.1
+eventlet==0.36.1
+
+# Utilities
+python-dotenv==1.0.1
+bleach==6.1.0
+
+# Testing
+pytest==8.2.2
+pytest-flask==1.3.0
+factory-boy==3.3.0
+
+# Dev
+black==24.4.2
+flake8==7.0.0
