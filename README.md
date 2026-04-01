@@ -23,107 +23,82 @@ Backend service for a local group-leader commerce model with catalog/search, inv
 
 ```text
 repo/
-├── app/                 # Flask application (routes, services, models, middleware, jobs)
+├── app/                 # Flask application
 ├── migrations/          # Alembic migrations
-├── scripts/             # Helper scripts (start, seed, migrate)
-├── unit_tests/          # Unit tests (service/domain level)
-├── API_tests/           # API functional tests (HTTP-level)
-├── run_tests.sh         # One-click test runner (bash)
-├── run_tests.ps1        # One-click test runner (PowerShell)
+├── scripts/             # Container entrypoint (migrations + seed + start)
+├── unit_tests/          # Unit tests
+├── API_tests/           # API functional tests
+├── run_tests.sh / run_tests.ps1
 ├── docker-compose.yml
 ├── Dockerfile
 └── requirements.txt
 ```
+
+Documentation: `docs/` (prompt, questions, API spec, design).
 
 ## Prerequisites
 
 - Docker
 - Docker Compose
 
-Useful endpoints:
+## Run the system (Docker only)
 
-- `GET /health`
-- `GET /health/ready`
-- API base: `/api/v1`
-
-## Docker Run
-
-From `repo/`:
+From the `repo/` directory:
 
 ```bash
 docker compose up --build
 ```
 
-Default mapping:
+On first start and on every restart, the container entrypoint:
 
-- App: `http://localhost:5000`
-- DB and runtime data persisted via mounted `repo/data/*`
+1. Creates a Fernet encryption key under the mounted `data/keys/` volume if it is missing  
+2. Applies database schema with **Alembic migrations** (`flask db upgrade`)  
+3. Runs the **seed script** (idempotent; re-runs are safe)  
+4. Starts the API on port **5000**
 
-Stop the app:
+You do **not** run migrations, seeding, or `.env` setup manually—Compose and the image handle it.
+
+Open the app:
+
+- API: `http://localhost:5000`
+- Health: `http://localhost:5000/health`
+- Readiness: `http://localhost:5000/health/ready`
+- Versioned API: `http://localhost:5000/api/v1`
+
+Stop:
 
 ```bash
 docker compose down
 ```
 
-## Local Development (no Docker)
+Runtime data (SQLite DB, keys, logs, attachments) is stored under `repo/data/` via Compose volume mounts.
+
+## Optional: override Compose defaults
+
+You can pass environment variables on the command line when starting the stack, for example:
 
 ```bash
-cd repo
-pip install -r requirements.txt
-cp .env.example .env          # edit as needed
-flask db upgrade
-flask run --host 0.0.0.0 --port 5000
+FLASK_ENV=production APP_VERSION=0.2.0 SECRET_KEY=your-secret docker compose up --build
 ```
 
-Set `FLASK_ENV=development` in `.env`. The Fernet key is auto-generated on first startup
-if `FERNET_KEY_PATH` points to a writable path.
+If you omit them, defaults are defined in `docker-compose.yml`.
 
-## Database and Seeding (Docker)
+## Tests (inside the running container)
 
-From `repo/`:
+With the stack up:
 
 ```bash
-# run migrations inside the container
-docker compose exec app sh -c "scripts/migrate.sh"
-
-# seed data inside the container
-docker compose exec app python scripts/seed.py
+docker compose exec app bash run_tests.sh
 ```
 
-## Testing
+On Windows, from `repo/`:
 
-One-click (recommended), from `repo/`:
-
-```bash
-# bash/Git-Bash
-bash run_tests.sh
-
-# PowerShell
-powershell -ExecutionPolicy Bypass -File run_tests.ps1
+```powershell
+docker compose exec app bash run_tests.sh
 ```
-
-Direct pytest:
-
-```bash
-python -m pytest unit_tests/ API_tests/ -v
-python -m pytest unit_tests/ -v
-python -m pytest API_tests/ -v
-```
-
-## Configuration
-
-Use `.env.example` as the template. Key settings:
-
-- `FLASK_ENV`
-- `APP_VERSION`
-- `DATABASE_URL`
-- `FERNET_KEY_PATH`
-- `LOG_FILE`
-- `ATTACHMENT_DIR`
-- `JOBS_ENABLED`
 
 ## Notes
 
-- This project is designed for single-machine/offline operation.
-- Background jobs are enabled by `JOBS_ENABLED=true`.
-- Keep `data/keys/secret.key` private and out of source control.
+- Intended for single-machine / offline-style deployment.
+- Replace the default `SECRET_KEY` Compose default before any real deployment.
+- Do not commit `repo/data/keys/` or production databases; those paths are gitignored in `repo/.gitignore`.

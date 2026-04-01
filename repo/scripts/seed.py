@@ -13,7 +13,6 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app
-from app.extensions import db
 
 os.makedirs("data/keys", exist_ok=True)
 os.makedirs("data/logs", exist_ok=True)
@@ -27,7 +26,7 @@ if not os.path.exists(key_path):
         kf.write(Fernet.generate_key())
     print(f"  Generated Fernet key at {key_path}")
 
-app = create_app("development")
+app = create_app(os.environ.get("FLASK_ENV", "development"))
 
 
 def _post(client, path, json=None, headers=None):
@@ -36,8 +35,8 @@ def _post(client, path, json=None, headers=None):
 
 
 def seed():
-    with app.app_context():
-        db.create_all()
+    # Schema is owned by Alembic migrations only — never db.create_all() here,
+    # or Docker restarts can end up with tables but no alembic_version row.
 
     with app.test_client() as client:
         # ----------------------------------------------------------------

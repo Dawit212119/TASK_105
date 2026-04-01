@@ -15,9 +15,17 @@ with open(key_path, "wb") as f:
 EOF
 fi
 
+# Align Alembic with pre-existing SQLite files (e.g. old create_all DBs)
+echo "Checking Alembic / SQLite state..."
+python scripts/ensure_alembic_state.py
+
 # Run migrations
 echo "Running Alembic migrations..."
 flask db upgrade
+
+# Seed fixtures (idempotent; safe on every container start)
+echo "Seeding database (idempotent)..."
+python scripts/seed.py
 
 # Start app via eventlet WSGI server
 echo "Starting application..."
