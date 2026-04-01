@@ -2,6 +2,9 @@
 a20597d5-e355-411e-b217-0ffb357f9bb1.jsonl
 convert_ai_session.py
 
+# Local IDE / agent config (do not publish)
+.claude/
+
 # Python / tooling
 __pycache__/
 *.py[cod]
